@@ -19,7 +19,7 @@ class Customer(db.Model):
     dependents = db.Column('Dependents', db.Boolean, nullable=False)
     tenure = db.Column('Tenure', db.Integer, nullable=False)
 
-    # Relaciones para facilitar el acceso a datos (opcional pero útil)
+    
     contract = db.relationship('Contract', backref='customer', uselist=False)
     internet = db.relationship('InternetService', backref='customer', uselist=False)
 
