@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">Registrar Empleado</div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label>ID Empleado</label>
+                        <input type="text" name="id" class="form-control" placeholder="EMP00X" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Nombre Completo</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Rol</label>
+                        <select name="role" class="form-select">
+                            <option value="Employee">Employee</option>
+                            <option value="Manager">Manager</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Username</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">Directorio de Empleados</div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Rol</th>
+                            <th>Username</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        <tr>
+                            <td>{{ emp.employee_id }}</td>
+                            <td>{{ emp.employee_name }}</td>
+                            <td><span class="badge bg-secondary">{{ emp.role }}</span></td>
+                            <td>{{ emp.username }}</td>
+                            <td>
+                                <a href="/delete_employee/{{ emp.employee_id }}" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar acceso?')">X</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

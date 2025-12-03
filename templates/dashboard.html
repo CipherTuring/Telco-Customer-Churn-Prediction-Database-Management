@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Client Risk Dashboard</h2>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="bi bi-person-plus-fill"></i> Register Customer
+    </button>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 bg-primary text-white border-0 shadow-sm">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <h1 class="display-3 fw-bold">{{ data|length }}</h1>
+                <p class="fs-5">Active Clients</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Internet Services</h6>
+                <div style="height: 150px;"><canvas id="chartInternet"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Contract Types</h6>
+                <div style="height: 150px;"><canvas id="chartContract"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Payment Methods</h6>
+                <div style="height: 150px;"><canvas id="chartPayment"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 text-primary fw-bold">Customer Database</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">ID</th>
+                    <th>Attributes</th>
+                    <th>Tenure</th>
+                    <th>Churn Probability</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer, prediction in data %}
+                <tr>
+                    <td class="ps-4 fw-bold text-primary">{{ customer.customer_id }}</td>
+                    <td>
+                        <div class="small">{{ customer.gender }}</div>
+                        {% if customer.senior_citizen %} <span class="badge bg-warning text-dark" title="Senior">S</span> {% endif %}
+                        {% if customer.partner %} <span class="badge bg-info text-dark" title="Has Partner">P</span> {% endif %}
+                        {% if customer.dependents %} <span class="badge bg-secondary" title="Has Dependents">D</span> {% endif %}
+                    </td>
+                    <td>{{ customer.tenure }} mo</td>
+                    <td>
+                        {% if prediction %}
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        {% if prediction.churn_probability > 0.8 %}bg-danger
+                                        {% elif prediction.churn_probability > 0.5 %}bg-warning
+                                        {% else %}bg-success{% endif %}" 
+                                        style="width: {{ prediction.churn_probability * 100 }}%">
+                                    </div>
+                                </div>
+                                <span class="ms-2 small fw-bold">{{ (prediction.churn_probability * 100)|int }}%</span>
+                            </div>
+                        {% else %}
+                            <span class="badge bg-secondary">N/A (Pending)</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group">
+                            <a href="/services/{{ customer.customer_id }}" class="btn btn-sm btn-outline-info" title="Manage Services"><i class="bi bi-gear-fill"></i></a>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ customer.customer_id }}"><i class="bi bi-pencil-square"></i></button>
+                            <a href="/delete_web/{{ customer.customer_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete customer?')"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+
+                <div class="modal fade" id="editModal{{ customer.customer_id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="/update_web" method="POST">
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title">Edit: {{ customer.customer_id }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="id" value="{{ customer.customer_id }}">
+                                    <div class="mb-3">
+                                        <label>Gender</label>
+                                        <select name="gender" class="form-select">
+                                            <option value="Male" {% if customer.gender == 'Male' %}selected{% endif %}>Male</option>
+                                            <option value="Female" {% if customer.gender == 'Female' %}selected{% endif %}>Female</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label>Tenure (Months)</label>
+                                        <input type="number" name="tenure" class="form-control" value="{{ customer.tenure }}" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="senior" {% if customer.senior_citizen %}checked{% endif %}>
+                                                <label class="form-check-label">Senior</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="partner" {% if customer.partner %}checked{% endif %}>
+                                                <label class="form-check-label">Partner</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="dependents" {% if customer.dependents %}checked{% endif %}>
+                                                <label class="form-check-label">Dep.</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/add_web" method="POST">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Register New Customer</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3"><label>Customer ID</label><input type="text" name="id" class="form-control" placeholder="CUST..." required></div>
+                    <div class="row mb-3">
+                        <div class="col-6"><label>Gender</label><select name="gender" class="form-select"><option>Male</option><option>Female</option></select></div>
+                        <div class="col-6"><label>Tenure</label><input type="number" name="tenure" class="form-control" required></div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" name="senior"><label class="form-check-label">Senior</label></div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" name="partner"><label class="form-check-label">Partner</label></div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" name="dependents"><label class="form-check-label">Dep.</label></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-success">Register</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function createChart(id, type, labels, data) {
+        new Chart(document.getElementById(id), {
+            type: type,
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#0d6efd', '#6610f2', '#6f42c1', '#d63384'], borderWidth: 0 }] },
+            options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        createChart('chartInternet', 'doughnut', {{ labels_int | tojson }}, {{ data_int | tojson }});
+        createChart('chartContract', 'bar', {{ labels_cont | tojson }}, {{ data_cont | tojson }});
+        createChart('chartPayment', 'pie', {{ labels_pay | tojson }}, {{ data_pay | tojson }});
+    });
+</script>
+{% endblock %}

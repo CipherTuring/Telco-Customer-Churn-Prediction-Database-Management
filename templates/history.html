@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Consultation Logs</h2>
+    <span class="badge bg-success" id="statusBadge"><i class="bi bi-broadcast"></i> Live Updates</span>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">System Activity Stream</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Employee</th>
+                    <th>Role</th>
+                    <th>Customer Accessed</th>
+                </tr>
+            </thead>
+            <tbody id="logsTableBody">
+                <tr><td colspan="4" class="text-center p-4">Loading logs...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function fetchLogs() {
+        fetch('/api/recent_logs')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('logsTableBody');
+                tbody.innerHTML = ''; // Clear current
+                
+                data.forEach(log => {
+                    const row = `
+                        <tr>
+                            <td>${log.time}</td>
+                            <td>${log.employee}</td>
+                            <td><span class="badge bg-secondary">${log.role}</span></td>
+                            <td class="fw-bold text-primary">${log.customer}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                
+                // Blink effect for "Live" badge
+                const badge = document.getElementById('statusBadge');
+                badge.classList.remove('bg-success');
+                badge.classList.add('bg-light');
+                setTimeout(() => {
+                    badge.classList.add('bg-success');
+                    badge.classList.remove('bg-light');
+                }, 200);
+            })
+            .catch(err => console.error('Error fetching logs:', err));
+    }
+
+    // Update every 3 seconds
+    setInterval(fetchLogs, 3000);
+    // Initial call
+    fetchLogs();
+</script>
+{% endblock %}

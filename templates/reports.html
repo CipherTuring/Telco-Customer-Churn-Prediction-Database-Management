@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-file-earmark-bar-graph"></i> Data Reports</h2>
+    <a href="/download_report" class="btn btn-danger btn-lg shadow-sm">
+        <i class="bi bi-file-pdf"></i> Download PDF Report
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <h3>${{ "{:,.2f}".format(revenue) }}</h3>
+                <p>Total Monthly Revenue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <h3>{{ total }}</h3>
+                <p>Total Customers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark h-100">
+            <div class="card-body text-center">
+                <h3>{{ avg_churn }}%</h3>
+                <p>Avg. Churn Probability</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white h-100">
+            <div class="card-body text-center">
+                <h3>{{ risk_count }}</h3>
+                <p>Critical Risk (>80%)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">Contract Distribution</div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Contract Type</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type, count in contracts %}
+                        <tr>
+                            <td>{{ type }}</td>
+                            <td>{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-secondary text-white">About Reports</div>
+            <div class="card-body">
+                <h5>Executive PDF Export</h5>
+                <p>Clicking the "Download PDF" button will generate a formal document containing:</p>
+                <ul>
+                    <li>Financial summaries (Revenue impact).</li>
+                    <li>Operational metrics.</li>
+                    <li><strong>Priority Action List:</strong> A table containing the specific IDs of customers with Churn Probability > 80% so the retention team can act immediately.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
