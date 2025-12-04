@@ -33,10 +33,8 @@ def wait_for_db():
         except Exception as e:
             print(f"DB Error: {e}")
 
-# ==========================================
-#  LOGIC ENGINE (BUSINESS LOGIC)
-# ==========================================
 
+#  LOGIC ENGINE (BUSINESS LOGIC)
 def calculate_churn_risk(customer, contract, internet):
     """
     Calculates risk based on REAL database attributes.
@@ -84,10 +82,14 @@ def get_retention_strategies(customer, contract, risk_score):
             
     return strategies
 
+<<<<<<< HEAD
 # ==========================================
 #  ZONA API RESTful
 # ==========================================
+=======
+>>>>>>> ea8cb0ce8b092116bb2c0de5d42614f6abc76497
 
+#  API RESTful
 @app.route('/api/customers', methods=['GET'])
 def api_get_customers():
     """
@@ -251,10 +253,8 @@ def api_recent_logs():
         })
     return jsonify(data)
 
-# ==========================================
-#  GUI ROUTES
-# ==========================================
 
+#  GUI ROUTES
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -302,7 +302,7 @@ def dashboard():
                            labels_pay=labels_pay, data_pay=data_pay,
                            user=session['user_name'])
 
-# --- PREDICTION TOOL (UPDATED) ---
+# PREDICTION TOOL
 @app.route('/predict', methods=['GET', 'POST'])
 def predict_tool():
     if 'user_id' not in session: return redirect(url_for('login'))
@@ -314,30 +314,30 @@ def predict_tool():
     if request.method == 'POST':
         cust_id = request.form['customer_id']
         
-        # 1. Validar que el cliente exista
+        
         customer = Customer.query.get(cust_id)
         
         if customer:
-            # 2. LOGICA INTELIGENTE: ¿Ya tiene predicción?
+            
             pred = Predictions.query.get(cust_id)
             
             if pred:
-                # CASO A: YA EXISTE -> Solo consultamos el valor guardado
+                
                 risk_score = pred.churn_probability
                 flash(f'Análisis recuperado de la base de datos para {cust_id}.', 'info')
             else:
-                # CASO B: NO EXISTE -> Calculamos desde cero
+                
                 contract = Contract.query.get(cust_id)
                 internet = InternetService.query.get(cust_id)
                 
                 risk_score = calculate_churn_risk(customer, contract, internet)
                 
-                # Guardamos la nueva predicción
+                n
                 pred = Predictions(customer_id=cust_id, churn_probability=risk_score)
                 db.session.add(pred)
                 flash(f'Nuevo análisis generado y guardado para {cust_id}.', 'success')
             
-            # 3. Generar Log de Consulta (Siempre registramos que el empleado consultó)
+            
             try:
                 new_log = ConsultationLogs(
                     log_id=f"LOG-{int(time.time())}",
@@ -351,13 +351,13 @@ def predict_tool():
                 db.session.rollback()
                 print(f"Error logging: {e}")
             
-            # 4. Preparar resultados visuales
+            
             result = {
                 'score': round(risk_score * 100, 1),
                 'risk_level': 'High' if risk_score > 0.5 else 'Low'
             }
             
-            # Estrategias de Retención (Solo si el riesgo es alto)
+            
             if risk_score > 0.80:
                 # Recuperamos los objetos si no los tenemos cargados del "Caso B"
                 contract = Contract.query.get(cust_id)
@@ -369,9 +369,13 @@ def predict_tool():
             flash(f'Customer {cust_id} not found.', 'danger')
 
     return render_template('predict.html', result=result, strategies=strategies, c=customer_data)
+<<<<<<< HEAD
 
 # --- CRUD OPERATIONS ---
+=======
+>>>>>>> ea8cb0ce8b092116bb2c0de5d42614f6abc76497
 
+# CRUD OPERATIONS
 @app.route('/add_web', methods=['POST'])
 def add_customer_web():
     if 'user_id' not in session: return redirect(url_for('login'))
@@ -387,8 +391,7 @@ def add_customer_web():
         )
         db.session.add(new_cust)
 
-        # 2. Create DEFAULT Services (Empty/Basic)
-        # This ensures the Prediction Tool doesn't crash later
+        
         new_contract = Contract(customer_id=new_cust.customer_id, contract_mode="Month-to-month", paperless_billing=0, payment_method="Mailed check", monthly_charges=0, total_charges=0)
         db.session.add(new_contract)
         
@@ -398,7 +401,7 @@ def add_customer_web():
         new_phone = PhoneService(customer_id=new_cust.customer_id, has_phone_service=0, multiple_lines=0)
         db.session.add(new_phone)
         
-        # NOTE: We DO NOT create a Prediction here. It will show "N/A" until processed.
+        
         
         db.session.commit()
         flash('Customer registered. Status: Pending Analysis (N/A).', 'success')
@@ -483,14 +486,14 @@ def delete_employee(id):
 def manage_services(customer_id):
     if 'user_id' not in session: return redirect(url_for('login'))
     
-    # 1. Obtener objetos (o 404 si no existe el cliente)
+   
     customer = Customer.query.get_or_404(customer_id)
     contract = Contract.query.get(customer_id)
     internet = InternetService.query.get(customer_id)
     phone = PhoneService.query.get(customer_id)
 
     if request.method == 'POST':
-        # 2. Actualizar/Crear CONTRATO
+        
         if not contract:
             contract = Contract(customer_id=customer_id, contract_mode="Month-to-month", paperless_billing=0, payment_method="Mailed check", monthly_charges=0, total_charges=0)
             db.session.add(contract)
@@ -498,11 +501,11 @@ def manage_services(customer_id):
         contract.contract_mode = request.form['contract_mode']
         contract.paperless_billing = 'paperless' in request.form
         contract.payment_method = request.form['payment_method']
-        # Convertir a float y manejar vacíos por seguridad
+        
         contract.monthly_charges = float(request.form['monthly']) if request.form['monthly'] else 0.0
         contract.total_charges = float(request.form['total']) if request.form['total'] else 0.0
 
-        # 3. Actualizar/Crear INTERNET
+        
         if not internet:
             internet = InternetService(customer_id=customer_id, internet_type="No", online_security=0, online_backup=0, device_protection=0, tech_support=0, streaming_movies=0)
             db.session.add(internet)
@@ -514,7 +517,7 @@ def manage_services(customer_id):
         internet.tech_support = 'support' in request.form
         internet.streaming_movies = 'streaming' in request.form
 
-        # 4. Actualizar/Crear TELÉFONO
+    
         if not phone:
             phone = PhoneService(customer_id=customer_id, has_phone_service=0, multiple_lines=0)
             db.session.add(phone)
@@ -522,20 +525,18 @@ def manage_services(customer_id):
         phone.has_phone_service = 'phone' in request.form
         phone.multiple_lines = 'lines' in request.form
 
-        # ---------------------------------------------------------
-        # 5. PASO CRUCIAL: RECALCULAR EL RIESGO (CHURN)
-        # ---------------------------------------------------------
-        # Usamos los objetos actualizados para calcular el nuevo score
+        
+        # Calculate Churn
+        
         new_risk = calculate_churn_risk(customer, contract, internet)
         
-        # Guardar en la tabla Predictions
+        # Save in predictions
         pred = Predictions.query.get(customer_id)
         if not pred:
             pred = Predictions(customer_id=customer_id)
             db.session.add(pred)
         pred.churn_probability = new_risk
 
-        # 6. Guardar todo en la Base de Datos
         db.session.commit()
         
         flash('Services updated and Churn Probability recalculated.', 'success')
@@ -548,14 +549,11 @@ def history():
     return render_template('history.html')
 
 
-
-# ==========================================
 #  REPORTING MODULE
-# ==========================================
 
 class PDF(FPDF):
     def header(self):
-        # Logo o Título
+        
         self.set_font('Arial', 'B', 15)
         self.cell(0, 10, 'ClientGuard - Executive Report', 0, 1, 'C')
         self.ln(5)
@@ -569,19 +567,14 @@ class PDF(FPDF):
 def reports():
     if 'user_id' not in session: return redirect(url_for('login'))
     
-    # 1. Obtener Estadísticas Generales
     total_customers = Customer.query.count()
     
-    # Ingresos Mensuales Totales (Suma)
     total_revenue = db.session.query(func.sum(Contract.monthly_charges)).scalar() or 0
     
-    # Promedio de Riesgo de Churn
     avg_churn = db.session.query(func.avg(Predictions.churn_probability)).scalar() or 0
     
-    # Conteo de Clientes en Riesgo (> 80%)
     high_risk_count = Predictions.query.filter(Predictions.churn_probability > 0.80).count()
     
-    # Distribución de Contratos (para la tabla visual)
     contracts = db.session.query(Contract.contract_mode, func.count(Contract.customer_id)).group_by(Contract.contract_mode).all()
 
     return render_template('reports.html', 
@@ -595,41 +588,33 @@ def reports():
 def download_report():
     if 'user_id' not in session: return redirect(url_for('login'))
     
-    # Recalcular datos para el PDF
     total_revenue = db.session.query(func.sum(Contract.monthly_charges)).scalar() or 0
     high_risk_customers = db.session.query(Customer, Predictions).join(Predictions).filter(Predictions.churn_probability > 0.80).limit(20).all()
     
-    # Iniciar PDF
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     
-    # --- SECCIÓN 1: RESUMEN EJECUTIVO ---
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, txt="1. Executive Summary", ln=True)
     pdf.set_font("Arial", size=12)
     
-    # Texto de reporte
     pdf.cell(200, 10, txt=f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
     pdf.cell(200, 10, txt=f"Total Monthly Revenue: ${round(total_revenue, 2):,}", ln=True)
     pdf.cell(200, 10, txt=f"High Risk Customers (>80%): {len(high_risk_customers)} (Showing top 20)", ln=True)
     pdf.ln(10)
     
-    # --- SECCIÓN 2: ALERTA DE RIESGO ---
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, txt="2. Priority Action List (High Risk)", ln=True)
     pdf.set_font("Arial", size=10)
     
-    # Encabezados de Tabla
     pdf.set_fill_color(200, 220, 255)
     pdf.cell(40, 10, 'Customer ID', 1, 0, 'C', 1)
     pdf.cell(30, 10, 'Tenure', 1, 0, 'C', 1)
     pdf.cell(40, 10, 'Contract', 1, 0, 'C', 1)
     pdf.cell(30, 10, 'Risk %', 1, 1, 'C', 1)
     
-    # Filas de Tabla
     for cust, pred in high_risk_customers:
-        # Necesitamos el contrato para mostrarlo
         contract = Contract.query.get(cust.customer_id)
         mode = contract.contract_mode if contract else "N/A"
         
@@ -637,15 +622,12 @@ def download_report():
         pdf.cell(30, 10, f"{cust.tenure} months", 1)
         pdf.cell(40, 10, str(mode), 1)
         
-        # Color rojo para el riesgo
         pdf.set_text_color(220, 50, 50)
         pdf.cell(30, 10, f"{int(pred.churn_probability * 100)}%", 1, 1, 'C')
         pdf.set_text_color(0, 0, 0) # Reset color
 
-    # Salida del PDF
     response = pdf.output(dest='S').encode('latin-1')
     
-    # Crear respuesta HTTP para descarga
     from flask import Response
     return Response(response, mimetype='application/pdf', headers={
         'Content-Disposition': 'attachment;filename=clientguard_report.pdf'
