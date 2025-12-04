@@ -1,10 +1,11 @@
 import os
 import time
 import datetime
-from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash, Response
 from sqlalchemy import func
 from models import db, Customer, Employee, Predictions, ConsultationLogs, InternetService, Contract, PhoneService
 from fpdf import FPDF
+from flasgger import Swagger 
 
 app = Flask(__name__)
 
@@ -13,6 +14,13 @@ app.secret_key = 'clientguard_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///local.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Swagger Config
+app.config['SWAGGER'] = {
+    'title': 'ClientGuard API',
+    'uiversion': 3
+}
+
+swagger = Swagger(app)
 db.init_app(app)
 
 def wait_for_db():
@@ -77,20 +85,157 @@ def get_retention_strategies(customer, contract, risk_score):
     return strategies
 
 # ==========================================
-#  API RESTful
+#  ZONA API RESTful
 # ==========================================
 
 @app.route('/api/customers', methods=['GET'])
 def api_get_customers():
+    """
+    Obtener todos los clientes
+    ---
+    tags:
+      - Customers
+    responses:
+      200:
+        description: Lista de clientes activos
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "CUST-001"
+              gender:
+                type: string
+              tenure:
+                type: integer
+    """
     customers = Customer.query.all()
     output = []
     for c in customers:
         output.append({'id': c.customer_id, 'gender': c.gender, 'tenure': c.tenure})
     return jsonify(output)
 
+@app.route('/api/customers', methods=['POST'])
+def api_create_customer():
+    """
+    Crear un nuevo cliente
+    ---
+    tags:
+      - Customers
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              example: "CUST-999"
+            gender:
+              type: string
+              example: "Female"
+            tenure:
+              type: integer
+              example: 5
+    responses:
+      201:
+        description: Cliente creado exitosamente
+      500:
+        description: Error al crear
+    """
+    data = request.json
+    try:
+        new_cust = Customer(
+            customer_id=data['id'],
+            gender=data.get('gender', 'Male'),
+            senior_citizen=data.get('senior', False),
+            partner=data.get('partner', False),
+            dependents=data.get('dependents', False),
+            tenure=data.get('tenure', 0)
+        )
+        db.session.add(new_cust)
+        db.session.commit()
+        return jsonify({'message': 'Cliente creado', 'id': new_cust.customer_id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/customers/<id>', methods=['PUT'])
+def api_update_customer(id):
+    """
+    Actualizar datos de un cliente
+    ---
+    tags:
+      - Customers
+    parameters:
+      - in: path
+        name: id
+        type: string
+        required: true
+        description: ID del cliente a actualizar
+      - in: body
+        name: body
+        schema:
+          type: object
+          properties:
+            tenure:
+              type: integer
+              description: Nueva antigüedad
+              example: 24
+    responses:
+      200:
+        description: Cliente actualizado
+      404:
+        description: Cliente no encontrado
+    """
+    data = request.json
+    customer = Customer.query.get(id)
+    if not customer: return jsonify({'message': 'Cliente no encontrado'}), 404
+    
+    if 'tenure' in data: customer.tenure = data['tenure']
+    db.session.commit()
+    return jsonify({'message': f'Cliente {id} actualizado'})
+
+@app.route('/api/customers/<id>', methods=['DELETE'])
+def api_delete_customer(id):
+    """
+    Eliminar un cliente
+    ---
+    tags:
+      - Customers
+    parameters:
+      - in: path
+        name: id
+        type: string
+        required: true
+        description: ID del cliente a eliminar
+    responses:
+      200:
+        description: Cliente eliminado
+      404:
+        description: Cliente no encontrado
+    """
+    customer = Customer.query.get(id)
+    if not customer: return jsonify({'message': 'Cliente no encontrado'}), 404
+    db.session.delete(customer)
+    db.session.commit()
+    return jsonify({'message': f'Cliente {id} eliminado'})
+
 @app.route('/api/recent_logs', methods=['GET'])
 def api_recent_logs():
-    # Fetch recent logs for real-time dashboard
+    """
+    Ver logs en tiempo real (Monitor)
+    ---
+    tags:
+      - Monitoring
+    responses:
+      200:
+        description: Últimos 10 eventos del sistema
+    """
     logs = db.session.query(ConsultationLogs, Employee, Customer).\
         join(Employee, ConsultationLogs.employee_id == Employee.employee_id).\
         join(Customer, ConsultationLogs.customer_id == Customer.customer_id).\
@@ -224,6 +369,7 @@ def predict_tool():
             flash(f'Customer {cust_id} not found.', 'danger')
 
     return render_template('predict.html', result=result, strategies=strategies, c=customer_data)
+
 # --- CRUD OPERATIONS ---
 
 @app.route('/add_web', methods=['POST'])

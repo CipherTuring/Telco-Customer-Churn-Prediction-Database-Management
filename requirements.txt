@@ -4,3 +4,4 @@ pymysql
 cryptography
 Faker
 fpdf
+flasgger
