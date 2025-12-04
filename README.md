@@ -29,10 +29,9 @@ ClientGuard is a comprehensive Full-Stack CRM and Analytics platform designed to
 - Docker Desktop
 - Git
 
-### Step 1 — Clone the Repository
+### Step 1 — Clone the Repository using the url of the project
 ```bash
-git clone https://github.com/YOUR_USERNAME/client-guard.git
-cd client-guard
+https://github.com/CipherTuring/Telco-Customer-Churn-Prediction-Database-Management.git
 ```
 
 ### Step 2 — Build and Run
@@ -92,13 +91,13 @@ curl -X GET http://localhost:5001/api/recent_logs
 Run the seed script inside the container:
 
 ```bash
-docker exec -it client-guard-web-1 python seed_raw.py
+docker exec -it telco_project-web-1 python seed_raw.py
 ```
 
 If missing:
 ```bash
-docker cp seed_raw.py client-guard-web-1:/app/seed_raw.py
-docker exec -it client-guard-web-1 python seed_raw.py
+docker cp seed_raw.py telco_project-web-1:/app/seed_raw.py
+docker exec -it telco_project-web-1 python seed_raw.py
 ```
 
 ## 📊 Logic Behind Prediction
